@@ -5,22 +5,46 @@
 //  Created by gomiRintaro on 2023/06/16.
 //
 
-class CalculatorPresenter {
+protocol PresenterInput: AnyObject {
+    func tappedCalculateButton(number1: Double, number2: Double)
+}
+
+protocol PresenterOutput: AnyObject {
+    func displayResult(result: Double)
+    func displayError(error: String)
+}
+
+
+final class CalculatorPresenter {
     private let model: Calculator
-    weak var view: CalculatorView?
+    private weak var view: PresenterOutput?
     
-    init(model: Calculator, view: CalculatorView) {
+    init(model: Calculator, view: PresenterOutput) {
         self.model = model
         self.view = view
     }
-    
-    func calculateDivide(number1: Double, number2: Double) {
-        if number2 == 0 {
-            view?.displayError(error: "0では割れません")
-            return
+}
+
+extension CalculatorPresenter: PresenterInput {
+
+    func tappedCalculateButton(number1: Double, number2: Double) {
+        do {
+            let result = try model.divide(number1: number1, number2: number2)
+            view?.displayResult(result: result)
+        } catch let error as CalculateError {
+            view?.displayError(error: error.message)
+        } catch {
+            view?.displayError(error: "不明なエラー")
         }
-        let result = model.divide(number1: number1, number2: number2)
-        view?.displayResult(result: result)
+    }
+}
+
+private extension CalculateError {
+
+    var message: String {
+        switch self {
+        case .dividedByZero: return "0では割れません。"
+        }
     }
 }
 
